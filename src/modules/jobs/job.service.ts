@@ -1,21 +1,31 @@
 import { JobModel } from "./job.model";
+import { nanoid } from "nanoid";
 
-
-
-const generateJobCode = async () => {
-  const count = await JobModel.countDocuments();
-  return `JOB-${new Date().getFullYear()}-${String(count + 1).padStart(6, "0")}`;
-};
 
 export const createJob = async (payload: any) => {
-  const jobCode = await generateJobCode();
 
+
+  const jobCode = `JOB-${nanoid(8).toUpperCase()}`;
   const job = await JobModel.create({
     ...payload,
     jobCode,
+    status: "ACTIVE",
     openingDate: new Date(payload.openingDate),
     expiryDate: new Date(payload.expiryDate),
   });
 
   return job;
+};
+
+export const getActiveJobs = async () => {
+  const today = new Date();
+
+  const jobs = await JobModel.find({
+    status: "ACTIVE",
+    expiryDate: { $gte: today },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return jobs;
 };
